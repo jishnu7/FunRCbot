@@ -8,17 +8,17 @@ Starting point -> http://www.habnabit.org/twistedex.html
 import sys
 import os
 import random
-from twisted.internet import reactor
-from twisted.internet import defer
-from twisted.internet import protocol
+import json
+from twisted.internet import reactor, defer, protocol
 from twisted.python import log
 from twisted.words.protocols import irc
 from twisted.application import internet, service
+from twisted.web.client import getPage
 import config
 
 __author__ = "Jishnu Mohan"
 __copyright__ = "Copyright 2012, Jishnu Mohan <jishnu7@gmail.com>"
-__license__ = "GPL"
+__license__ = "GNU GPLv3"
 __email__ = "jishnu7@gmail.com"
 
 
@@ -101,6 +101,18 @@ class FunRCProtocol(irc.IRCClient):
 
     def command_fortune(self, rest):
         return os.popen('fortune -s').read().translate(None, '\n\r\t')
+
+    def command_wikipedia(self, rest):
+        url = "https://en.wikipedia.org/w/api.php?action=query&list=random&rnnamespace=0&rnlimit=1&format=json"
+        wiki_response_d = getPage(url)
+        wiki_response_d.addCallback(self._get_wiki_results)
+        return wiki_response_d
+
+    def _get_wiki_results(self, page):
+        api_respose = page.decode("utf8")
+        result = json.loads(api_respose)
+        data = result['query']['random'][0]
+        return str(data['title']) + " http://en.wikipedia.org/wiki?curid=" + str(data['id'])
 
     def got_names(self, nicklist):
         remove = config.BOTS
