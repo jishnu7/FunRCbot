@@ -76,6 +76,9 @@ class FunRCProtocol(irc.IRCClient):
     def _show_error(self, failure):
         return failure.getErrorMessage()
 
+    def command_help(self, rest):
+        return 'Try !ping, !hi, !saylater, !maketea'
+
     def command_ping(self, rest):
         return 'Pong.'
 
@@ -93,19 +96,18 @@ class FunRCProtocol(irc.IRCClient):
         # maybeDeferred in privmsg.
         return d
 
-    def got_names(self, nicklist):
-        log.msg(nicklist)
-        remove = config.BOTS
-        nicklist = [item for item in nicklist if item not in remove]
-
-        return "selected " + random.choice(list(nicklist)) \
-            + " to make tea"
-
     def command_maketea(self, rest):
         return self.names(config.CHANNEL).addCallback(self.got_names)
 
     def command_fortune(self, rest):
         return os.popen('fortune -s').read().translate(None, '\n\r\t')
+
+    def got_names(self, nicklist):
+        remove = config.BOTS
+        nicklist = [item for item in nicklist if item not in remove]
+
+        return "selected " + random.choice(list(nicklist)) \
+            + " to make tea"
 
     def names(self, channel):
         channel = channel.lower()
