@@ -6,6 +6,8 @@ A Python IRC bot.
 Starting point -> http://www.habnabit.org/twistedex.html
 '''
 import sys
+import os
+import random
 from twisted.internet import reactor
 from twisted.internet import defer
 from twisted.internet import protocol
@@ -90,6 +92,47 @@ class FunRCProtocol(irc.IRCClient):
         # Returning the Deferred here means that it'll be returned from
         # maybeDeferred in privmsg.
         return d
+
+    def got_names(self, nicklist):
+        log.msg(nicklist)
+        remove = config.BOTS
+        nicklist = [item for item in nicklist if item not in remove]
+
+        return "selected " + random.choice(list(nicklist)) \
+            + " to make tea"
+
+    def command_maketea(self, rest):
+        return self.names(config.CHANNEL).addCallback(self.got_names)
+
+    def command_fortune(self, rest):
+        return os.popen('fortune -s').read().translate(None, '\n\r\t')
+
+    def names(self, channel):
+        channel = channel.lower()
+        d = defer.Deferred()
+        if channel not in self._namescallback:
+            self._namescallback[channel] = ([], [])
+
+        self._namescallback[channel][0].append(d)
+        self.sendLine("NAMES %s" % channel)
+        return d
+
+    def irc_RPL_NAMREPLY(self, prefix, params):
+        channel = params[2].lower()
+        nicklist = params[3].split(' ')
+        if channel not in self._namescallback:
+            return
+        n = self._namescallback[channel][1]
+        n += nicklist
+
+    def irc_RPL_ENDOFNAMES(self, prefix, params):
+        channel = params[1].lower()
+        if channel not in self._namescallback:
+            return
+        callbacks, namelist = self._namescallback[channel]
+        for cb in callbacks:
+            cb.callback(namelist)
+        del self._namescallback[channel]
 
 
 class FunRCFactory(protocol.ReconnectingClientFactory):
