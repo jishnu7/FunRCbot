@@ -43,6 +43,11 @@ class FunRCProtocol(irc.IRCClient):
             # do nothing
             return
         command, sep, rest = message.lstrip('!').partition(' ')
+        try:
+            nick = rest.split('to ')[1].split()[0]
+            rest = rest.replace('to '+nick, '')
+        except:
+            pass
         # Get the function corresponding to the command given.
         func = getattr(self, 'command_' + command, None)
         # Or, if there was no function, ignore the message.
