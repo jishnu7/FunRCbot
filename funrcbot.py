@@ -82,7 +82,7 @@ class FunRCProtocol(irc.IRCClient):
         return failure.getErrorMessage()
 
     def command_help(self, rest):
-        return 'Try !ping, !hi, !saylater, !maketea'
+        return 'Try !ping, !hi, !saylater, !maketea, !wikipedia, !fortune'
 
     def command_ping(self, rest):
         return 'Pong.'
